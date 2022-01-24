@@ -8,11 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Directory.png" />
     <None Remove="Resources\Drive.png" />
+    <None Remove="Resources\file.png" />
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\Directory.png" />
     <Resource Include="Resources\Drive.png" />
+    <Resource Include="Resources\file.png" />
   </ItemGroup>
 
 </Project>

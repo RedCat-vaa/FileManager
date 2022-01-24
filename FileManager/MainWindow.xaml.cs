@@ -23,24 +23,172 @@ namespace FileManager
     /// </summary>
     public partial class MainWindow : Window
     {
-        ObservableCollection<FileClass> files;
+        ObservableCollection<FileClass> files1;
+        ObservableCollection<FileClass> files2;
         public MainWindow()
         {
             InitializeComponent();
-            StartFillList();
-            FileList1.ItemsSource = files;
+            StartFillList(TypeFillList.AllList);
+            FileList1.ItemsSource = files1;
+            FileList2.ItemsSource = files2;
         }
 
-        public void StartFillList()
+        public void StartFillList(TypeFillList type)
         {
-            files = new ObservableCollection<FileClass>();
-            DriveInfo[] drives = DriveInfo.GetDrives();
-            foreach (DriveInfo drive in drives)
+            if (type == TypeFillList.AllList)
             {
-                if (drive.IsReady)
+                files1 = new ObservableCollection<FileClass>();
+                files2 = new ObservableCollection<FileClass>();
+                DriveInfo[] drives = DriveInfo.GetDrives();
+                foreach (DriveInfo drive in drives)
                 {
-                    files.Add(new FileClass(@"Resources\Drive.png", drive.Name));
+                    if (drive.IsReady)
+                    {
+                        files1.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
+                        files2.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
+                    }
                 }
+            }
+            else if (type == TypeFillList.List1)
+            {
+                files1.Clear();
+                DriveInfo[] drives = DriveInfo.GetDrives();
+                foreach (DriveInfo drive in drives)
+                {
+                    if (drive.IsReady)
+                    {
+                        files1.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
+                    }
+                }
+            }
+            else if (type == TypeFillList.List2)
+            {
+                files2.Clear();
+                DriveInfo[] drives = DriveInfo.GetDrives();
+                foreach (DriveInfo drive in drives)
+                {
+                    if (drive.IsReady)
+                    {
+                        files2.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
+                    }
+                }
+            }
+
+        }
+
+        private void FileList1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SelectDirectory();
+        }
+
+        private void FileList2_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SelectDirectory(false);
+        }
+
+        private void SelectDirectory(bool list1 = true, string? nameDirectory=null)
+        {
+            FileClass selectFile;
+            if (list1)
+            {
+                selectFile = (FileClass)FileList1.SelectedItem;
+            }
+            else
+            {
+                selectFile = (FileClass)FileList2.SelectedItem;
+            }
+           
+            string? CatalogName = null;
+           
+            List<FileClass> filesInCatalog = null;
+            
+            if (nameDirectory!=null)
+            {
+                if (nameDirectory=="")
+                { 
+                    if (list1)
+                    {
+                        StartFillList(TypeFillList.List1);
+                    }
+                    else
+                    {
+                        StartFillList(TypeFillList.List2);
+                    }
+                   
+                }
+                else
+                {
+                    filesInCatalog = FileClass.GetFiles(nameDirectory);
+                }
+                
+            }
+            else
+            {
+                if (selectFile != null)
+                {
+                    if (selectFile.File)
+                    {
+                        return;
+                    }
+                    CatalogName = selectFile.FullName;
+                }
+                filesInCatalog = FileClass.GetFiles(CatalogName);
+            }          
+            
+            if (filesInCatalog != null)
+            {
+                if (list1)
+                {
+                    files1.Clear();
+                }
+                else
+                {
+                    files2.Clear();
+                }
+                foreach (FileClass fileInCatalog in filesInCatalog)
+                {
+                    if (list1)
+                    {
+                        files1.Add(fileInCatalog);
+                    }
+                    else
+                    {
+                        files2.Add(fileInCatalog);
+                    }
+                    
+                }
+            }
+        }
+        private void MenuItem1_Click(object sender, RoutedEventArgs e)
+        {
+           if (FileList1.Items.Count>0)
+           {
+               FileClass startDir = (FileClass)FileList1.Items[0];
+               string[] masDir = startDir.FullName.Split("\\");
+               string PathDir = "";
+               if (masDir.Length>1)
+               {
+                   for(int i= 0;i < masDir.Length-2;i++)
+                   {
+                        PathDir += masDir[i] + "\\";
+                   }
+                   SelectDirectory(true,PathDir);
+               }
+           }
+            
+        }
+        private void MenuItem2_Click(object sender, RoutedEventArgs e)
+        {
+            FileClass startDir = (FileClass)FileList2.Items[0];
+            string[] masDir = startDir.FullName.Split("\\");
+            string PathDir = "";
+            if (masDir.Length > 1)
+            {
+                for (int i = 0; i < masDir.Length - 2; i++)
+                {
+                    PathDir += masDir[i] + "\\";
+                }
+                SelectDirectory(false, PathDir);
             }
         }
     }
