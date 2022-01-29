@@ -31,7 +31,7 @@ namespace FileManager.Classes
     interface IFileAction
     {
         public event Message eventMessage;
-        public FileClass concreteMember { get; set; }
+        public IFile concreteMember { get; set; }
 
         public void Copy(string copyDir);
         public void Delete();
@@ -39,9 +39,9 @@ namespace FileManager.Classes
     public class ConcreteFile : IFileAction
     {
         public event Message eventMessage;
-        public FileClass concreteMember { get; set; }
+        public IFile concreteMember { get; set; }
 
-        public ConcreteFile(FileClass file)
+        public ConcreteFile(IFile file)
         {
             this.concreteMember = file;
         }
@@ -91,9 +91,9 @@ namespace FileManager.Classes
     public class ConcreteDirectory : IFileAction
     {
         public event Message eventMessage;
-        public FileClass concreteMember { get; set; }
+        public IFile concreteMember { get; set; }
 
-        public ConcreteDirectory(FileClass directory)
+        public ConcreteDirectory(IFile directory)
         {
             this.concreteMember = directory;
         }
@@ -137,8 +137,14 @@ namespace FileManager.Classes
     }
 
 
-
-    public class FileClass : INotifyPropertyChanged
+    public interface IFile
+    {
+        public string Image { get; set; }
+        public string Name { get; set; }
+        public string FullName { get; set; }
+        public bool IsFile { get; set; }
+    }
+    public class FileClass : INotifyPropertyChanged, IFile
     {
         public delegate void Message(object sender, EventMessageArgs e);
         public event Message eventMessage;
@@ -221,6 +227,34 @@ namespace FileManager.Classes
             return PathDir;
         }
 
+      
+        public static void GetDrives(ObservableCollection<FileClass> files)
+        {
+            files.Clear();
+
+            DriveInfo[] drives = DriveInfo.GetDrives();
+            foreach (DriveInfo drive in drives)
+            {
+                if (drive.IsReady)
+                {
+                    files.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
+                }
+            }
+        }
+
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(prop));
+        }
+    }
+
+
+    //класс, для заполнения данных в листбоксах
+    public class ListAction
+    {
         public static void FillList(TypeFillList type, ObservableCollection<FileClass> files1, ObservableCollection<FileClass> files2)
         {
             if (type == TypeFillList.AllList)
@@ -236,8 +270,8 @@ namespace FileManager.Classes
             {
                 FileClass.GetDrives(files2);
             }
-
         }
+
         public static void GetDrives(ObservableCollection<FileClass> files)
         {
             files.Clear();
@@ -283,11 +317,70 @@ namespace FileManager.Classes
 
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        public static void SelectDirectory(MainWindow mainWin, bool list1 = true, string? nameDirectory = null)
         {
-            if (PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(prop));
+            FileClass selectFile;
+            if (list1)
+            {
+                selectFile = mainWin.GetListItem(true, true);
+            }
+            else
+            {
+                selectFile = mainWin.GetListItem(false, true);
+            }
+
+            string? CatalogName = null;
+            if (nameDirectory != null)
+            {
+                if (nameDirectory == "")
+                {
+                    if (list1)
+                    {
+                        ListAction.FillList(TypeFillList.List1, mainWin.files1, mainWin.files2);
+                    }
+                    else
+                    {
+                        ListAction.FillList(TypeFillList.List2, mainWin.files1, mainWin.files2);
+                    }
+
+                }
+                else
+                {
+                    if (list1)
+                    {
+                        ListAction.GetFiles(nameDirectory, mainWin.files1);
+                    }
+                    else
+                    {
+                        ListAction.GetFiles(nameDirectory, mainWin.files2);
+                    }
+                }
+
+            }
+            else
+            {
+                if (selectFile != null)
+                {
+                    if (selectFile.IsFile)
+                    {
+                        ConcreteFile file = new ConcreteFile(selectFile);
+                        file.Execute();
+                        return;
+                    }
+                    CatalogName = selectFile.FullName;
+                }
+                if (list1)
+                {
+                    mainWin.currentRoot1 = FileClass.RootPath(CatalogName, 1);
+                    ListAction.GetFiles(CatalogName, mainWin.files1);
+                }
+                else
+                {
+                    mainWin.currentRoot2 = FileClass.RootPath(CatalogName, 1);
+                    ListAction.GetFiles(CatalogName, mainWin.files2);
+                }
+            }
+
         }
     }
 }

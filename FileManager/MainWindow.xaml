@@ -48,7 +48,7 @@
         </Menu>
         <GridSplitter Grid.Column="1" Grid.Row="1" ShowsPreview="False" Width="3"
          HorizontalAlignment="Center" VerticalAlignment="Stretch"></GridSplitter>
-        <ListBox Grid.Row="1" x:Name="FileList1" Background="AliceBlue" ItemTemplate="{StaticResource ListTemplate}" MouseDoubleClick="FileList1_MouseDoubleClick">
+        <ListBox Grid.Row="1" x:Name="FileList1" Background="AliceBlue" ItemTemplate="{StaticResource ListTemplate}"  MouseDoubleClick="FileList1_MouseDoubleClick">
         </ListBox>
         <ListBox Grid.Row="1" Grid.Column="2" x:Name="FileList2" Background="AliceBlue" ItemTemplate="{StaticResource ListTemplate}" MouseDoubleClick="FileList2_MouseDoubleClick">
         </ListBox>
