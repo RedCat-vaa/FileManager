@@ -11,16 +11,137 @@ using System.Runtime.CompilerServices;
 
 namespace FileManager.Classes
 {
+    public delegate void Message(object sender, EventMessageArgs e);
+    public class EventMessageArgs
+    {
+        public string Message { get; set; }
+
+        public EventMessageArgs(string message)
+        {
+            Message = message;
+        }
+    }
     public enum TypeFillList
     {
         AllList,
         List1,
         List2
     }
-     
+
+    interface IFileAction
+    {
+        public event Message eventMessage;
+        public FileClass concreteMember { get; set; }
+
+        public void Copy(string copyDir);
+        public void Delete();
+    }
+    public class ConcreteFile : IFileAction
+    {
+        public event Message eventMessage;
+        public FileClass concreteMember { get; set; }
+
+        public ConcreteFile(FileClass file)
+        {
+            this.concreteMember = file;
+        }
+
+        public void Execute()
+        {
+            if (concreteMember != null)
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(concreteMember.FullName);
+                }
+                catch
+                {
+
+                }
+
+            }
+        }
+
+        public void Copy(string copyDir)
+        {
+            try
+            {
+                File.Copy(concreteMember.FullName, copyDir + concreteMember.Name);
+
+            }
+            catch (Exception ex)
+            {
+                eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+            }
+
+        }
+        public void Delete()
+        {
+            try
+            {
+                File.Delete(concreteMember.FullName);
+            }
+            catch (Exception ex)
+            {
+                eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+            }
+        }
+    }
+
+    public class ConcreteDirectory : IFileAction
+    {
+        public event Message eventMessage;
+        public FileClass concreteMember { get; set; }
+
+        public ConcreteDirectory(FileClass directory)
+        {
+            this.concreteMember = directory;
+        }
+        public void Copy(string copyDir)
+        {
+            try
+            {
+                Directory.CreateDirectory(copyDir + concreteMember.Name);
+                foreach (string s1 in Directory.GetFiles(concreteMember.FullName))
+                {
+                    string s2 = copyDir + concreteMember.Name + "\\" + Path.GetFileName(s1);
+
+                    File.Copy(s1, s2);
+                }
+                foreach (string s in Directory.GetDirectories(concreteMember.FullName))
+                {
+                    FileClass DirInDir = new(@"Resources\Directory.png", Path.GetFileName(s), s);
+                    ConcreteDirectory newDir = new ConcreteDirectory(DirInDir);
+                    newDir.Copy(copyDir + concreteMember.Name + "\\" + Path.GetFileName(s));
+                }
+
+            }
+            catch (Exception ex)
+            {
+                eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+            }
+
+        }
+
+        public void Delete()
+        {
+            try
+            {
+                Directory.Delete(concreteMember.FullName);
+            }
+            catch (Exception ex)
+            {
+                eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+            }
+        }
+    }
+
+
 
     public class FileClass : INotifyPropertyChanged
     {
+        public delegate void Message(object sender, EventMessageArgs e);
+        public event Message eventMessage;
         private string image;
         private string name;
         private string fullname;
@@ -37,7 +158,7 @@ namespace FileManager.Classes
                 OnPropertyChanged("Image");
             }
         }
-        
+
         public string Name
         {
             get
@@ -63,7 +184,7 @@ namespace FileManager.Classes
             }
         }
 
-        public bool File
+        public bool IsFile
         {
             get
             {
@@ -72,7 +193,7 @@ namespace FileManager.Classes
             set
             {
                 file = value;
-                OnPropertyChanged("File");
+                OnPropertyChanged("IsFile");
             }
         }
 
@@ -81,53 +202,85 @@ namespace FileManager.Classes
         {
             Image = image;
             Name = name;
-            File = file;
+            IsFile = file;
             FullName = fullname;
         }
 
-        public static List<FileClass> GetFiles(string Drive)
+        public static string RootPath(string Path, int Size)
         {
+            string[] masDir = Path.Split("\\");
+            string PathDir = "";
+            if (masDir.Length > 1)
+            {
+                for (int i = 0; i < masDir.Length - Size; i++)
+                {
+                    PathDir += masDir[i] + "\\";
+                }
+            }
+
+            return PathDir;
+        }
+
+        public static void FillList(TypeFillList type, ObservableCollection<FileClass> files1, ObservableCollection<FileClass> files2)
+        {
+            if (type == TypeFillList.AllList)
+            {
+                FileClass.GetDrives(files1);
+                FileClass.GetDrives(files2);
+            }
+            else if (type == TypeFillList.List1)
+            {
+                FileClass.GetDrives(files1);
+            }
+            else if (type == TypeFillList.List2)
+            {
+                FileClass.GetDrives(files2);
+            }
+
+        }
+        public static void GetDrives(ObservableCollection<FileClass> files)
+        {
+            files.Clear();
+
+            DriveInfo[] drives = DriveInfo.GetDrives();
+            foreach (DriveInfo drive in drives)
+            {
+                if (drive.IsReady)
+                {
+                    files.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
+                }
+            }
+        }
+
+        public static void GetFiles(string Drive, ObservableCollection<FileClass> files)
+        {
+            files.Clear();
             if (Drive != null)
             {
-                List<FileClass> filesInDrive = new List<FileClass>();
-                
+
                 try
                 {
                     string[] directories = Directory.GetDirectories(Drive);
-                    string[] files = Directory.GetFiles(Drive);
-                    string[] massiveSplit;
+                    string[] filesStr = Directory.GetFiles(Drive);
                     foreach (string directory in directories)
                     {
-                        massiveSplit = directory.Split("\\");
-                        if (massiveSplit.Length > 0)
-                        {
-                            filesInDrive.Add(new FileClass(@"Resources\Directory.png", massiveSplit[massiveSplit.Length - 1], directory));
-                        }
 
+                        files.Add(new FileClass(@"Resources\Directory.png", Path.GetFileName(directory), directory));
                     }
 
-                    foreach (string file in files)
+                    foreach (string file in filesStr)
                     {
-                        massiveSplit = file.Split("\\");
-                        if (massiveSplit.Length > 0)
-                        {
-                            filesInDrive.Add(new FileClass(@"Resources\file.png", massiveSplit[massiveSplit.Length - 1], file, true));
-                        }
+
+                        files.Add(new FileClass(@"Resources\file.png", Path.GetFileName(file), file, true));
 
                     }
                 }
                 catch
                 {
-                    return null;
                 }
-              
-                return filesInDrive;
+
             }
-            else
-            {
-                return null;
-            }
-            
+
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

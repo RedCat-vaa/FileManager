@@ -6,6 +6,12 @@
         xmlns:local="clr-namespace:FileManager"
         mc:Ignorable="d"
         Title="FileManager" Height="450" Width="800">
+    <Window.CommandBindings>
+        <CommandBinding Command="local:MyCommands.BackCommand" Executed="BackCommandExe"></CommandBinding>
+        <CommandBinding Command="local:MyCommands.CopyCommand" Executed="CopyCommandExe"></CommandBinding>
+        <CommandBinding Command="local:MyCommands.DeleteCommand" Executed="DeleteCommandExe"></CommandBinding>
+        
+    </Window.CommandBindings>
     <Window.Resources>
         <DataTemplate x:Key="ListTemplate">
             <StackPanel Orientation="Horizontal" Margin="3">
@@ -25,10 +31,20 @@
             <ColumnDefinition></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Menu Grid.Column="0">
-            <MenuItem Header="Назад" Click="MenuItem1_Click" ></MenuItem>
+            <MenuItem Header="Действия">
+                <MenuItem Header="Назад" Command="local:MyCommands.BackCommand" CommandParameter="1"></MenuItem>
+                <MenuItem Header="Копировать" Command="local:MyCommands.CopyCommand" CommandParameter="1"></MenuItem>
+                <MenuItem Header="Удалить" Command="local:MyCommands.DeleteCommand" CommandParameter="1"></MenuItem>
+            </MenuItem>
+           
         </Menu>
         <Menu Grid.Column="2">
-            <MenuItem Header="Назад" Click="MenuItem2_Click" ></MenuItem>
+            <MenuItem Header="Действия">
+                <MenuItem Header="Назад"  Command="local:MyCommands.BackCommand" CommandParameter="2"></MenuItem>
+                <MenuItem Header="Копировать" Command="local:MyCommands.CopyCommand" CommandParameter="2"></MenuItem>
+                <MenuItem Header="Удалить" Command="local:MyCommands.DeleteCommand" CommandParameter="2"></MenuItem>
+            </MenuItem>
+           
         </Menu>
         <GridSplitter Grid.Column="1" Grid.Row="1" ShowsPreview="False" Width="3"
          HorizontalAlignment="Center" VerticalAlignment="Stretch"></GridSplitter>

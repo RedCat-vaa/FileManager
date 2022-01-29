@@ -21,60 +21,224 @@ namespace FileManager
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
+
+    public class MyCommands
+    {
+        public static RoutedCommand BackCommand;
+        public static RoutedCommand CopyCommand;
+        public static RoutedCommand DeleteCommand;
+
+        static MyCommands()
+        {
+            BackCommand = new RoutedCommand("BackCommand", typeof(MainWindow));
+            CopyCommand = new RoutedCommand("CopyCommand", typeof(MainWindow));
+            DeleteCommand = new RoutedCommand("DeleteCommand", typeof(MainWindow));
+        }
+    }
+
+
     public partial class MainWindow : Window
     {
         ObservableCollection<FileClass> files1;
         ObservableCollection<FileClass> files2;
+
+        string currentRoot1;
+        string currentRoot2;
         public MainWindow()
         {
             InitializeComponent();
-            StartFillList(TypeFillList.AllList);
+            files1 = new ObservableCollection<FileClass>();
+            files2 = new ObservableCollection<FileClass>();
+            FileClass.FillList(TypeFillList.AllList, files1, files2);
             FileList1.ItemsSource = files1;
             FileList2.ItemsSource = files2;
+            currentRoot1 = ""; currentRoot2 = "";
         }
 
-        public void StartFillList(TypeFillList type)
+        public void EventMessageHandler(object sender, EventMessageArgs e)
         {
-            if (type == TypeFillList.AllList)
+            MessageBox.Show(e.Message);
+        }
+
+        public void DeleteCommandExe(object sender, ExecutedRoutedEventArgs e)
+        {
+            FileClass startDir1 = null;
+            FileClass startDir2 = null;
+            if (e.Parameter.ToString() == "1")
             {
-                files1 = new ObservableCollection<FileClass>();
-                files2 = new ObservableCollection<FileClass>();
-                DriveInfo[] drives = DriveInfo.GetDrives();
-                foreach (DriveInfo drive in drives)
+                startDir1 = (FileClass)FileList1.SelectedItem;
+
+                if (startDir1 != null)
                 {
-                    if (drive.IsReady)
+
+                    IFileAction fileManager;
+                    if (startDir1.IsFile)
                     {
-                        files1.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
-                        files2.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
+                        fileManager = new ConcreteFile(startDir1);
+                    }
+                    else
+                    {
+                        fileManager = new ConcreteDirectory(startDir1);
+                    }
+                   
+                    string PathDir = FileClass.RootPath(startDir1.FullName, 1);
+                    if (PathDir != "")
+                    {
+                        fileManager.eventMessage += EventMessageHandler;
+                        fileManager.Delete();
+                        FileClass.GetFiles(PathDir, files1);
+                    }
+
+                        
+                }
+               
+
+            }
+            else if (e.Parameter.ToString() == "2")
+            {
+                startDir2 = (FileClass)FileList2.SelectedItem;
+                if (startDir2 != null)
+                {
+
+                    IFileAction fileManager;
+                    if (startDir2.IsFile)
+                    {
+                        fileManager = new ConcreteFile(startDir2);
+                    }
+                    else
+                    {
+                        fileManager = new ConcreteDirectory(startDir2);
+                    }
+                    string PathDir = FileClass.RootPath(startDir2.FullName, 1);
+                    if (PathDir != "")
+                    {
+                        fileManager.eventMessage += EventMessageHandler;
+                        fileManager.Delete();
+                        FileClass.GetFiles(PathDir, files2);
                     }
                 }
             }
-            else if (type == TypeFillList.List1)
+        }
+
+
+
+        public void BackCommandExe(object sender, ExecutedRoutedEventArgs e)
+        {
+            FileClass startDir = null;
+            bool list1 = false;
+            if (e.Parameter.ToString() == "1")
             {
-                files1.Clear();
-                DriveInfo[] drives = DriveInfo.GetDrives();
-                foreach (DriveInfo drive in drives)
+                list1 = true;
+                if (FileList1.Items.Count > 0)
                 {
-                    if (drive.IsReady)
-                    {
-                        files1.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
-                    }
+                    startDir = (FileClass)FileList1.Items[0];
                 }
             }
-            else if (type == TypeFillList.List2)
+            else if (e.Parameter.ToString() == "2")
             {
-                files2.Clear();
-                DriveInfo[] drives = DriveInfo.GetDrives();
-                foreach (DriveInfo drive in drives)
+                if (FileList2.Items.Count > 0)
                 {
-                    if (drive.IsReady)
-                    {
-                        files2.Add(new FileClass(@"Resources\Drive.png", drive.Name, drive.Name));
-                    }
+                    startDir = (FileClass)FileList2.Items[0];
                 }
             }
 
+            if (startDir != null)
+            {
+                string PathDir = FileClass.RootPath(startDir.FullName, 2);
+                if (PathDir != "")
+                {
+                    SelectDirectory(list1, PathDir);
+                }
+                else
+                {
+                    if (list1)
+                    {
+                        FileClass.GetDrives(files1);
+                    }
+                    else
+                    {
+                        FileClass.GetDrives(files2);
+                    }
+
+                }
+            }
+            else
+            {
+                if (list1)
+                {
+                    SelectDirectory(list1, currentRoot1);
+                }
+                else
+                {
+                    SelectDirectory(list1, currentRoot2);
+                }
+            }
         }
+
+        public void CopyCommandExe(object sender, ExecutedRoutedEventArgs e)
+        {
+            FileClass startDir1 = null;
+            FileClass startDir2 = null;
+            if (e.Parameter.ToString() == "1")
+            {
+                startDir1 = (FileClass)FileList1.SelectedItem;
+                if (FileList2.Items.Count > 0)
+                {
+                    startDir2 = (FileClass)FileList2.Items[0];
+                }
+                if (startDir2 != null)
+                {
+                    string PathDir = FileClass.RootPath(startDir2.FullName, 1);
+                    if ((PathDir != "") && (startDir1 != null))
+                    {
+                        IFileAction fileManager;
+                        if (startDir1.IsFile)
+                        {
+                            fileManager = new ConcreteFile(startDir1);
+                        }
+                        else
+                        {
+                            fileManager = new ConcreteDirectory(startDir1);
+                        }
+                        fileManager.eventMessage += EventMessageHandler;
+                        fileManager.Copy(PathDir);
+                        FileClass.GetFiles(PathDir, files2);
+                    }
+
+                }
+            }
+            else if (e.Parameter.ToString() == "2")
+            {
+                startDir2 = (FileClass)FileList2.SelectedItem;
+                if (FileList1.Items.Count > 0)
+                {
+                    startDir1 = (FileClass)FileList1.Items[0];
+                }
+                if (startDir2 != null)
+                {
+                    string PathDir = FileClass.RootPath(startDir1.FullName, 1);
+                    if ((PathDir != "") && (startDir2 != null))
+                    {
+                        IFileAction fileManager;
+                        if (startDir2.IsFile)
+                        {
+                            fileManager = new ConcreteFile(startDir2);
+                        }
+                        else
+                        {
+                            fileManager = new ConcreteDirectory(startDir2);
+                        }
+                        fileManager.eventMessage += EventMessageHandler;
+                        fileManager.Copy(PathDir);
+                        FileClass.GetFiles(PathDir, files1);
+                    }
+
+                }
+
+            }
+        }
+
 
         private void FileList1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
@@ -86,7 +250,7 @@ namespace FileManager
             SelectDirectory(false);
         }
 
-        private void SelectDirectory(bool list1 = true, string? nameDirectory=null)
+        private void SelectDirectory(bool list1 = true, string? nameDirectory = null)
         {
             FileClass selectFile;
             if (list1)
@@ -97,99 +261,59 @@ namespace FileManager
             {
                 selectFile = (FileClass)FileList2.SelectedItem;
             }
-           
+
             string? CatalogName = null;
-           
-            List<FileClass> filesInCatalog = null;
-            
-            if (nameDirectory!=null)
+            if (nameDirectory != null)
             {
-                if (nameDirectory=="")
-                { 
+                if (nameDirectory == "")
+                {
                     if (list1)
                     {
-                        StartFillList(TypeFillList.List1);
+                        FileClass.FillList(TypeFillList.List1, files1, files2);
                     }
                     else
                     {
-                        StartFillList(TypeFillList.List2);
+                        FileClass.FillList(TypeFillList.List2, files1, files2);
                     }
-                   
+
                 }
                 else
                 {
-                    filesInCatalog = FileClass.GetFiles(nameDirectory);
+                    if (list1)
+                    {
+                        FileClass.GetFiles(nameDirectory, files1);
+                    }
+                    else
+                    {
+                        FileClass.GetFiles(nameDirectory, files2);
+                    }
                 }
-                
+
             }
             else
             {
                 if (selectFile != null)
                 {
-                    if (selectFile.File)
+                    if (selectFile.IsFile)
                     {
+                        ConcreteFile file = new ConcreteFile(selectFile);
+                        file.Execute();
                         return;
                     }
                     CatalogName = selectFile.FullName;
                 }
-                filesInCatalog = FileClass.GetFiles(CatalogName);
-            }          
-            
-            if (filesInCatalog != null)
-            {
                 if (list1)
                 {
-                    files1.Clear();
+                    currentRoot1 = FileClass.RootPath(CatalogName, 1);
+                    FileClass.GetFiles(CatalogName, files1);
                 }
                 else
                 {
-                    files2.Clear();
-                }
-                foreach (FileClass fileInCatalog in filesInCatalog)
-                {
-                    if (list1)
-                    {
-                        files1.Add(fileInCatalog);
-                    }
-                    else
-                    {
-                        files2.Add(fileInCatalog);
-                    }
-                    
+                    currentRoot2 = FileClass.RootPath(CatalogName, 1);
+                    FileClass.GetFiles(CatalogName, files2);
                 }
             }
-        }
-        private void MenuItem1_Click(object sender, RoutedEventArgs e)
-        {
-           if (FileList1.Items.Count>0)
-           {
-               FileClass startDir = (FileClass)FileList1.Items[0];
-               string[] masDir = startDir.FullName.Split("\\");
-               string PathDir = "";
-               if (masDir.Length>1)
-               {
-                   for(int i= 0;i < masDir.Length-2;i++)
-                   {
-                        PathDir += masDir[i] + "\\";
-                   }
-                   SelectDirectory(true,PathDir);
-               }
-           }
-            
-        }
-        private void MenuItem2_Click(object sender, RoutedEventArgs e)
-        {
-            FileClass startDir = (FileClass)FileList2.Items[0];
-            string[] masDir = startDir.FullName.Split("\\");
-            string PathDir = "";
-            if (masDir.Length > 1)
-            {
-                for (int i = 0; i < masDir.Length - 2; i++)
-                {
-                    PathDir += masDir[i] + "\\";
-                }
-                SelectDirectory(false, PathDir);
-            }
+
         }
     }
 }
