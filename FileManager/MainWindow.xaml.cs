@@ -58,7 +58,11 @@ namespace FileManager
 
         public void CopyCommandExe(object sender, ExecutedRoutedEventArgs e)
         {
-            CommandExecuted.CopyCommandExe(sender, e);
+            CommandExecuted.ActionCommandExe(sender, e, TypeAction.Copy);
+        }
+        public void MoveCommandExe(object sender, ExecutedRoutedEventArgs e)
+        {
+            CommandExecuted.ActionCommandExe(sender, e, TypeAction.Move);
         }
 
         public FileClass GetListItem(bool list1, bool select)

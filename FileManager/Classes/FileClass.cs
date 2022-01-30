@@ -28,15 +28,17 @@ namespace FileManager.Classes
         List2
     }
 
-    interface IFileAction
+    interface IConcreteUnit
     {
         public event Message eventMessage;
         public IFile concreteMember { get; set; }
 
         public void Copy(string copyDir);
+        public void Move(string moveDir);
         public void Delete();
+
     }
-    public class ConcreteFile : IFileAction
+    public class ConcreteFile : IConcreteUnit
     {
         public event Message eventMessage;
         public IFile concreteMember { get; set; }
@@ -50,13 +52,23 @@ namespace FileManager.Classes
         {
             if (concreteMember != null)
             {
-                try
+                string FileExtension = Path.GetExtension(concreteMember.FullName).ToLower();
+                if (FileExtension == ".exe")
                 {
-                    System.Diagnostics.Process.Start(concreteMember.FullName);
+                    try
+                    {
+                        System.Diagnostics.Process.Start(concreteMember.FullName);
+                    }
+                    catch
+                    {
+
+                    }
                 }
-                catch
+                else if ((FileExtension == ".txt")|| (FileExtension == ".rtf"))
                 {
 
+                    DocumentWindow docWin = new DocumentWindow(concreteMember);
+                    docWin.ShowDialog();
                 }
 
             }
@@ -64,16 +76,34 @@ namespace FileManager.Classes
 
         public void Copy(string copyDir)
         {
-            try
+            if (copyDir != "")
             {
-                File.Copy(concreteMember.FullName, copyDir + concreteMember.Name);
+                try
+                {
+                    File.Copy(concreteMember.FullName, copyDir + concreteMember.Name);
 
+                }
+                catch (Exception ex)
+                {
+                    eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+                }
             }
-            catch (Exception ex)
+        }
+
+        public void Move(string moveDir)
+        {
+            if (moveDir != "")
             {
-                eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
-            }
+                try
+                {
+                    File.Move(concreteMember.FullName, moveDir + concreteMember.Name);
 
+                }
+                catch (Exception ex)
+                {
+                    eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+                }
+            }
         }
         public void Delete()
         {
@@ -88,7 +118,7 @@ namespace FileManager.Classes
         }
     }
 
-    public class ConcreteDirectory : IFileAction
+    public class ConcreteDirectory : IConcreteUnit
     {
         public event Message eventMessage;
         public IFile concreteMember { get; set; }
@@ -99,26 +129,44 @@ namespace FileManager.Classes
         }
         public void Copy(string copyDir)
         {
-            try
+            if (copyDir != "")
             {
-                Directory.CreateDirectory(copyDir + concreteMember.Name);
-                foreach (string s1 in Directory.GetFiles(concreteMember.FullName))
+                try
                 {
-                    string s2 = copyDir + concreteMember.Name + "\\" + Path.GetFileName(s1);
+                    Directory.CreateDirectory(copyDir + concreteMember.Name);
+                    foreach (string s1 in Directory.GetFiles(concreteMember.FullName))
+                    {
+                        string s2 = copyDir + concreteMember.Name + "\\" + Path.GetFileName(s1);
 
-                    File.Copy(s1, s2);
+                        File.Copy(s1, s2);
+                    }
+                    foreach (string s in Directory.GetDirectories(concreteMember.FullName))
+                    {
+                        FileClass DirInDir = new(@"Resources\Directory.png", Path.GetFileName(s), s);
+                        ConcreteDirectory newDir = new ConcreteDirectory(DirInDir);
+                        newDir.Copy(copyDir + concreteMember.Name + "\\" + Path.GetFileName(s));
+                    }
+
                 }
-                foreach (string s in Directory.GetDirectories(concreteMember.FullName))
+                catch (Exception ex)
                 {
-                    FileClass DirInDir = new(@"Resources\Directory.png", Path.GetFileName(s), s);
-                    ConcreteDirectory newDir = new ConcreteDirectory(DirInDir);
-                    newDir.Copy(copyDir + concreteMember.Name + "\\" + Path.GetFileName(s));
+                    eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
                 }
-
             }
-            catch (Exception ex)
+        }
+
+        public void Move(string moveDir)
+        {
+            if (moveDir != "")
             {
-                eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+                try
+                {
+                    Directory.Move(concreteMember.FullName, moveDir + concreteMember.Name);
+                }
+                catch (Exception ex)
+                {
+                    eventMessage?.Invoke(this, new EventMessageArgs(ex.Message));
+                }
             }
 
         }
@@ -227,7 +275,7 @@ namespace FileManager.Classes
             return PathDir;
         }
 
-      
+
         public static void GetDrives(ObservableCollection<FileClass> files)
         {
             files.Clear();
@@ -289,7 +337,7 @@ namespace FileManager.Classes
         public static void GetFiles(string Drive, ObservableCollection<FileClass> files)
         {
             files.Clear();
-            if (Drive != null)
+            if (Drive != null && Drive != "")
             {
 
                 try

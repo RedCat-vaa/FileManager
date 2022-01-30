@@ -10,6 +10,7 @@
         <CommandBinding Command="local:MyCommands.BackCommand" Executed="BackCommandExe"></CommandBinding>
         <CommandBinding Command="local:MyCommands.CopyCommand" Executed="CopyCommandExe"></CommandBinding>
         <CommandBinding Command="local:MyCommands.DeleteCommand" Executed="DeleteCommandExe"></CommandBinding>
+        <CommandBinding Command="local:MyCommands.MoveCommand" Executed="MoveCommandExe"></CommandBinding>
         
     </Window.CommandBindings>
     <Window.Resources>
@@ -34,6 +35,7 @@
             <MenuItem Header="Действия">
                 <MenuItem Header="Назад" Command="local:MyCommands.BackCommand" CommandParameter="1"></MenuItem>
                 <MenuItem Header="Копировать" Command="local:MyCommands.CopyCommand" CommandParameter="1"></MenuItem>
+                <MenuItem Header="Переместить" Command="local:MyCommands.MoveCommand" CommandParameter="1"></MenuItem>
                 <MenuItem Header="Удалить" Command="local:MyCommands.DeleteCommand" CommandParameter="1"></MenuItem>
             </MenuItem>
            
@@ -42,6 +44,7 @@
             <MenuItem Header="Действия">
                 <MenuItem Header="Назад"  Command="local:MyCommands.BackCommand" CommandParameter="2"></MenuItem>
                 <MenuItem Header="Копировать" Command="local:MyCommands.CopyCommand" CommandParameter="2"></MenuItem>
+                <MenuItem Header="Переместить" Command="local:MyCommands.MoveCommand" CommandParameter="2"></MenuItem>
                 <MenuItem Header="Удалить" Command="local:MyCommands.DeleteCommand" CommandParameter="2"></MenuItem>
             </MenuItem>
            

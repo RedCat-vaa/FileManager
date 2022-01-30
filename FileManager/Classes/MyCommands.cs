@@ -5,20 +5,28 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using FileManager.Classes;
+using System.Threading.Tasks;
 
 namespace FileManager
 {
+    public enum TypeAction
+    {
+        Copy,
+        Move
+    }
     public class MyCommands
     {
         public static RoutedCommand BackCommand;
         public static RoutedCommand CopyCommand;
         public static RoutedCommand DeleteCommand;
+        public static RoutedCommand MoveCommand;
 
         static MyCommands()
         {
             BackCommand = new RoutedCommand("BackCommand", typeof(MainWindow));
             CopyCommand = new RoutedCommand("CopyCommand", typeof(MainWindow));
             DeleteCommand = new RoutedCommand("DeleteCommand", typeof(MainWindow));
+            MoveCommand = new RoutedCommand("MoveCommand", typeof(MainWindow));
         }
     }
 
@@ -31,7 +39,7 @@ namespace FileManager
         public static void BackCommandExe(object sender, ExecutedRoutedEventArgs e)
         {
             MainWindow mainWin = sender as MainWindow;
-            if (mainWin==null)
+            if (mainWin == null)
             {
                 return;
             }
@@ -87,122 +95,116 @@ namespace FileManager
             {
                 return;
             }
-            FileClass startDir1 = null;
-            FileClass startDir2 = null;
+            FileClass FileDelete = null;
             if (e.Parameter.ToString() == "1")
             {
-                startDir1 = mainWin.GetListItem(true, true);
-
-                if (startDir1 != null)
-                {
-
-                    IFileAction fileManager;
-                    if (startDir1.IsFile)
-                    {
-                        fileManager = new ConcreteFile(startDir1);
-                    }
-                    else
-                    {
-                        fileManager = new ConcreteDirectory(startDir1);
-                    }
-
-                    string PathDir = FileClass.RootPath(startDir1.FullName, 1);
-                    if (PathDir != "")
-                    {
-                        fileManager.eventMessage += mainWin.EventMessageHandler;
-                        fileManager.Delete();
-                        ListAction.GetFiles(PathDir, mainWin.files1);
-                    }
-                }
+                FileDelete = mainWin.GetListItem(true, true);
             }
             else if (e.Parameter.ToString() == "2")
             {
-                startDir2 = mainWin.GetListItem(false, true);
-                if (startDir2 != null)
-                {
+                FileDelete = mainWin.GetListItem(false, true);
+            }
 
-                    IFileAction fileManager;
-                    if (startDir2.IsFile)
-                    {
-                        fileManager = new ConcreteFile(startDir2);
-                    }
-                    else
-                    {
-                        fileManager = new ConcreteDirectory(startDir2);
-                    }
-                    string PathDir = FileClass.RootPath(startDir2.FullName, 1);
-                    if (PathDir != "")
-                    {
-                        fileManager.eventMessage += mainWin.EventMessageHandler;
-                        fileManager.Delete();
-                        ListAction.GetFiles(PathDir, mainWin.files2);
-                    }
+            if (FileDelete != null)
+            {
+
+                IConcreteUnit concreteUnit;
+                if (FileDelete.IsFile)
+                {
+                    concreteUnit = new ConcreteFile(FileDelete);
                 }
+                else
+                {
+                    concreteUnit = new ConcreteDirectory(FileDelete);
+                }
+
+                string PathDir = FileClass.RootPath(FileDelete.FullName, 1);
+                concreteUnit.eventMessage += mainWin.EventMessageHandler;
+                Task actionTask = Task.Run(() =>
+                {
+                    concreteUnit.Delete();
+                });
+
+                actionTask.Wait();
+                if (e.Parameter.ToString() == "1")
+                {
+                    ListAction.GetFiles(PathDir, mainWin.files1);
+                }
+                else if (e.Parameter.ToString() == "2")
+                {
+                    ListAction.GetFiles(PathDir, mainWin.files2);
+                }
+
             }
         }
 
-        public static void CopyCommandExe(object sender, ExecutedRoutedEventArgs e)
+        public static void ActionCommandExe(object sender, ExecutedRoutedEventArgs e, TypeAction type)
         {
             MainWindow mainWin = sender as MainWindow;
             if (mainWin == null)
             {
                 return;
             }
-            FileClass startDir1 = null;
-            FileClass startDir2 = null;
+            FileClass File1 = null;
+            FileClass File2 = null;
             if (e.Parameter.ToString() == "1")
             {
-                startDir1 = mainWin.GetListItem(true, true);
-                startDir2 = mainWin.GetListItem(false, false);
-                if (startDir2 != null)
-                {
-                    string PathDir = FileClass.RootPath(startDir2.FullName, 1);
-                    if ((PathDir != "") && (startDir1 != null))
-                    {
-                        IFileAction fileManager;
-                        if (startDir1.IsFile)
-                        {
-                            fileManager = new ConcreteFile(startDir1);
-                        }
-                        else
-                        {
-                            fileManager = new ConcreteDirectory(startDir1);
-                        }
-                        fileManager.eventMessage += mainWin.EventMessageHandler;
-                        fileManager.Copy(PathDir);
-                        ListAction.GetFiles(PathDir, mainWin.files2);
-                    }
-
-                }
+                File1 = mainWin.GetListItem(true, true);
+                File2 = mainWin.GetListItem(false, false);
             }
             else if (e.Parameter.ToString() == "2")
             {
-                startDir2 = mainWin.GetListItem(false, true);
-                startDir1 = mainWin.GetListItem(true, false);
-                if (startDir2 != null)
+                File1 = mainWin.GetListItem(false, true);
+                File2 = mainWin.GetListItem(true, false);
+            }
+
+            if (File2 != null)
+            {
+                string PathDir = FileClass.RootPath(File2.FullName, 1);
+                if (File1 != null)
                 {
-                    string PathDir = FileClass.RootPath(startDir1.FullName, 1);
-                    if ((PathDir != "") && (startDir2 != null))
+                    IConcreteUnit concreteUnit;
+                    if (File1.IsFile)
                     {
-                        IFileAction fileManager;
-                        if (startDir2.IsFile)
+                        concreteUnit = new ConcreteFile(File1);
+                    }
+                    else
+                    {
+                        concreteUnit = new ConcreteDirectory(File1);
+                    }
+                    concreteUnit.eventMessage += mainWin.EventMessageHandler;
+
+                    Task actionTask = Task.Run(() =>
+                    {
+                        if (type == TypeAction.Copy)
                         {
-                            fileManager = new ConcreteFile(startDir2);
+                            concreteUnit.Copy(PathDir);
                         }
-                        else
+                        else if (type == TypeAction.Move)
                         {
-                            fileManager = new ConcreteDirectory(startDir2);
+                            concreteUnit.Move(PathDir);
                         }
-                        fileManager.eventMessage += mainWin.EventMessageHandler;
-                        fileManager.Copy(PathDir);
+                    });
+
+                    actionTask.Wait();
+
+                    string PathDir1 = FileClass.RootPath(File1.FullName, 1);
+                    if (e.Parameter.ToString() == "1")
+                    {
+ 
+                        ListAction.GetFiles(PathDir1, mainWin.files1);
+                        ListAction.GetFiles(PathDir, mainWin.files2);
+                    }
+                    else if (e.Parameter.ToString() == "2")
+                    {
+                        ListAction.GetFiles(PathDir1, mainWin.files2);
                         ListAction.GetFiles(PathDir, mainWin.files1);
                     }
-
+                    
                 }
-
             }
         }
     }
 
-    
+
 }
